@@ -1,0 +1,11 @@
+streamlit
+pandas
+numpy
+scikit-learn
+requests
+wordcloud
+matplotlib
+seaborn
+langchain-google-genai
+pydantic
+plotly
