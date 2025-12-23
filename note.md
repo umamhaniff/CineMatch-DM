@@ -7,7 +7,3 @@ pip install -q -r requirements.txt
 ``` bash
 streamlit run app.py
 ````
-
-```python
-st.info("💡 **Tips:** Jika rekomendasi kurang relevan, coba tambah jumlah page dan refresh data.")
-```
