@@ -1,9 +1,9 @@
-# intall di terminal = 
+# intall di terminal 
 ```bash
 pip install -q -r requirements.txt
 ```
 
-# Run di terminal = 
+# Run di terminal 
 ``` bash
 streamlit run app.py
 ````

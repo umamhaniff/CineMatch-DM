@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field
 # Streamlit page configuration
 # ===============================================================
 st.set_page_config(
-    page_title="CineMatch AI",
+    page_title="CineMatch",
     page_icon="🍿",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -73,10 +73,14 @@ st.markdown(
             font-weight: 700;
             margin-bottom: 1rem;
             margin-top: 2rem;
-            color: #f8fafc;
+            color: var(--text-color);
             border-bottom: 2px solid #FF4B4B;
             display: inline-block;
             padding-bottom: 5px;
+        }
+
+        .h4{
+            color: var(--text-color);
         }
 
         /* Fixed-size movie cards for search results and recommendations */
@@ -85,14 +89,14 @@ st.markdown(
             /* Set a fixed height to ensure all cards align, leaving room for synopsis */
             min-height: 500px;
             height: auto;
-            background-color: #1e1e1e;
+            background-color: var(--secondary-background-color);
             border-radius: 10px;
             border: 1px solid #334155;
             padding: 0.5rem;
             /* margin: top right bottom left: minimal horizontal, larger bottom for row separation */
             margin: 0.5rem 1rem 0.5rem 1rem;
             box-sizing: border-box;
-            color: #f1f5f9;
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -423,7 +427,7 @@ with st.sidebar:
 # ===============================================================
 # Main application logic
 # ===============================================================
-st.title("🍿 CineMatch AI")
+st.title("🍿 CineMatch")
 st.markdown("##### Temukan film favoritmu berikutnya dengan kekuatan Hybrid AI & Gemini.")
 
 # ===============================================================
@@ -665,7 +669,6 @@ else:
     st.info("Masukkan judul film untuk memulai pencarian.")
 
 # Exploratory Data Analysis (EDA) section using expander
-st.markdown("<br><br><br>", unsafe_allow_html=True)
 st.markdown("---")
 
 with st.expander("📊 Statistik & Eksplorasi Data (EDA)"):
