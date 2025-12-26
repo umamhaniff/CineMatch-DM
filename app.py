@@ -19,9 +19,7 @@ from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 
 
-# ===============================================================
 # Streamlit page configuration
-# ===============================================================
 st.set_page_config(
     page_title="CineMatch",
     page_icon="🍿",
@@ -29,9 +27,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ===============================================================
-# Custom CSS for modern look and feel
-# ===============================================================
+# Custom CSS
 st.markdown(
     """
     <style>
@@ -172,9 +168,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ===============================================================
 # API Keys configuration
-# ===============================================================
 try:
     TMDB_API_KEY = st.secrets["TMDB_API_KEY"]
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
@@ -182,10 +176,7 @@ except Exception:
     st.error("⚠️ API Keys belum disetting! Harap buat file .streamlit/secrets.toml")
     st.stop()
 
-
-# ===============================================================
 # Data acquisition from TMDB
-# ===============================================================
 def fetch_tmdb_data(api_key: str, pages: int) -> pd.DataFrame:
     """
     Crawl popular movies from TMDB API while displaying a progress bar and status.
@@ -248,10 +239,7 @@ def fetch_tmdb_data(api_key: str, pages: int) -> pd.DataFrame:
     df = pd.DataFrame(movies).drop_duplicates(subset=['id']).reset_index(drop=True)
     return df[df['overview'].str.len() > 10]
 
-
-# ===============================================================
 # Hybrid content and numeric similarity model
-# ===============================================================
 @st.cache_resource
 def build_hybrid_model(df: pd.DataFrame):
     """
@@ -281,10 +269,7 @@ def build_hybrid_model(df: pd.DataFrame):
     hybrid_sim = (0.7 * content_sim) + (0.3 * numeric_sim)
     return df, hybrid_sim
 
-
-# ===============================================================
 # Search logic and recommendation retrieval
-# ===============================================================
 def get_search_and_recommend_logic(movie_query: str, df: pd.DataFrame, hybrid_sim: np.ndarray, top_n: int = 5):
     """
     Perform a fuzzy search on movie titles and compute recommendations based on the hybrid similarity matrix.
@@ -341,10 +326,7 @@ def get_search_and_recommend_logic(movie_query: str, df: pd.DataFrame, hybrid_si
     display_search = search_results[['title', 'genres', 'vote_average', 'release_date', 'overview', 'poster_path', 'popularity']]
     return display_search, rec_df, msg
 
-
-# ===============================================================
 # AI evaluation class and chain
-# ===============================================================
 class MovieEval(BaseModel):
     score: int = Field(description="Skor 1-10")
     analysis: str = Field(description="Analisis singkat")
@@ -391,9 +373,7 @@ def evaluate_with_ai(anchor_title: str, rec_df: pd.DataFrame):
             continue
     return f"⚠️ Tidak dapat memproses permintaan: {last_error}"
 
-# ===============================================================
 # Sidebar information panel
-# ===============================================================
 with st.sidebar:
     st.header("ℹ️ Ringkasan Data")
     # Display data summary if available
@@ -424,15 +404,10 @@ with st.sidebar:
     st.caption("🔍 Hybrid Filtering:\n- 70% Content (TF-IDF)\n- 30% Quality (Rating/Pop)")
 
 
-# ===============================================================
 # Main application logic
-# ===============================================================
 st.title("🍿 CineMatch")
 st.markdown("##### Temukan film favoritmu berikutnya dengan kekuatan Hybrid AI & Gemini.")
 
-# ===============================================================
-# Data loading controls and caching via session_state
-# ===============================================================
 # Initialize session state for data and evaluation
 if 'df_raw' not in st.session_state:
     st.session_state['df_raw'] = None
