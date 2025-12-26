@@ -310,18 +310,27 @@ def get_search_and_recommend_logic(movie_query: str, df: pd.DataFrame, hybrid_si
     # select anchor: exact match prioritized
     anchor_idx = None
     exact_match = df[df['title_lower'] == query_norm]
+
     if not exact_match.empty:
-        anchor_idx = exact_match.index[0]
+        anchor_row = exact_match.index[0]
+        anchor_idx = df.index.get_loc(anchor_row)
     elif not search_results.empty:
-        anchor_idx = search_results.index[0]
+        anchor_row = search_results.index[0]
+        anchor_idx = df.index.get_loc(anchor_row)
+
+    if anchor_idx is None or anchor_idx >= hybrid_sim.shape[0]:
+        return search_results, None, "Film ditemukan, tetapi tidak cukup data untuk rekomendasi."
 
     rec_df = None
     if anchor_idx is not None:
         sim_scores = list(enumerate(hybrid_sim[anchor_idx]))
         sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-        rec_indices = [i[0] for i in sim_scores[1:top_n+1]]
+        rec_indices = [i[0] for i in sim_scores[1:min(top_n+1, len(sim_scores))]]
         rec_df = df.iloc[rec_indices][['title', 'genres', 'vote_average', 'release_date', 'overview', 'poster_path']].copy()
-        rec_df['similarity_score'] = [i[1] for i in sim_scores[1:top_n+1]]
+        rec_df['similarity_score'] = [sim_scores[i+1][1] for i in range(len(rec_indices))]
+
+    if anchor_idx is None or hybrid_sim is None or len(df) <= 1:
+        return search_results, None, "Film ditemukan, tetapi tidak cukup data untuk rekomendasi."
 
     display_search = search_results[['title', 'genres', 'vote_average', 'release_date', 'overview', 'poster_path', 'popularity']]
     return display_search, rec_df, msg
@@ -436,6 +445,10 @@ if st.session_state.get('df_raw') is None and not st.session_state['data_loading
     st.session_state['data_loading'] = True
     with progress_placeholder:
         df_init = fetch_tmdb_data(TMDB_API_KEY, st.session_state['pages'])
+        if df_init is None or df_init.empty:
+            st.error("❌ Tidak ada film yang berhasil dimuat dari TMDB.")
+            st.session_state['data_loading'] = False
+            st.stop()
     df_proc_init, hybrid_init = build_hybrid_model(df_init)
     st.session_state['df_raw'] = df_init
     st.session_state['df'] = df_proc_init
@@ -494,6 +507,9 @@ with col_settings:
             # Display progress bar during data fetching
             with progress_placeholder:
                 df_new = fetch_tmdb_data(TMDB_API_KEY, pages_slider)
+                if df_new is None or df_new.empty:
+                    st.error("❌ Data kosong, refresh dibatalkan.")
+                    st.stop()
             df_processed, hybrid_sim_new = build_hybrid_model(df_new)
             st.session_state['df_raw'] = df_new
             st.session_state['df'] = df_processed
@@ -523,7 +539,9 @@ if query or search_clicked:
                 top_n=int(st.session_state.get('top_n', 5))
             )
             if search_df is None:
-                st.error(msg)
+                st.warning(msg)
+                st.info("💡 Coba judul lain atau gunakan kata kunci yang lebih umum.")
+                st.stop()
             else:
                 # Reset evaluation whenever a new search is performed
                 st.session_state['evaluation'] = None
@@ -584,7 +602,7 @@ if query or search_clicked:
                                 """
                                 st.markdown(card_html, unsafe_allow_html=True)
                 # Display recommendations if available
-                if rec_df is not None:
+                if rec_df is not None and not rec_df.empty:
                     st.markdown('<div class="section-title">✨ Rekomendasi Hybrid Pilihan</div>', unsafe_allow_html=True)
                     rec_count = len(rec_df)
                     max_cols = 5
@@ -610,15 +628,21 @@ if query or search_clicked:
                                     </div>
                                 """
                                 st.markdown(card_html, unsafe_allow_html=True)
+                else:
+                    st.info("😔 Belum ada rekomendasi serupa untuk film ini.")
+                    st.caption("Dataset mungkin terlalu kecil atau film ini unik.")
                 # AI evaluation section
                 st.markdown('<div class="section-title">🤖 Analisis Cerdas Gemini AI</div>', unsafe_allow_html=True)
                 if rec_df is not None:
                     # Show button if evaluation hasn't been done yet
                     if st.session_state['evaluation'] is None:
-                        if st.button("✨ Minta Pendapat AI tentang Rekomendasi ini"):
-                            with st.spinner("Gemini sedang menganalisis selera filmmu..."):
-                                eval_res = evaluate_with_ai(target['title'], rec_df)
-                            st.session_state['evaluation'] = eval_res
+                        if rec_df is None or rec_df.empty:
+                            st.info("🤖 AI tidak dijalankan karena tidak ada film rekomendasi.")
+                        else:
+                            if st.button("✨ Minta Pendapat AI tentang Rekomendasi ini"):
+                                with st.spinner("Gemini sedang menganalisis selera filmmu..."):
+                                    eval_res = evaluate_with_ai(target['title'], rec_df)
+                                st.session_state['evaluation'] = eval_res
                     # Display evaluation results if available
                     if st.session_state['evaluation'] is not None:
                         eval_res = st.session_state['evaluation']
