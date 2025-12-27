@@ -257,6 +257,7 @@ def build_hybrid_model(df: pd.DataFrame):
         The processed dataframe (with new columns) and the hybrid similarity matrix.
     """
     df['content_features'] = df['title'] + " " + df['genres'] + " " + df['overview']
+    
     tfidf = TfidfVectorizer(stop_words='english', max_features=5000)
     tfidf_matrix = tfidf.fit_transform(df['content_features'])
 
